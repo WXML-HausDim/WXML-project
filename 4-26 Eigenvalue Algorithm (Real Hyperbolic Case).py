@@ -18,14 +18,15 @@ theta_tilde = np.pi/6 # angle of arc contained in each disk
 # define disks in terms of centers and radii
 
 # maps point e^it in disc model to corresponding point in upper half plane model
+# this is equivalent to the map phi(e^it) = -i*(e^it+1)/(e^it-1)
 def phi(t):
     val = np.sin(t)/(np.cos(t)-1)
     
     return val
 
 # obtain centers and radii by average and difference of endpoints of the half-circle under phi
-centers = np.array([(phi(thetas[0]-theta_tilde/2) + phi(thetas[0]+theta_tilde/2))/2,                     (phi(thetas[1]-theta_tilde/2) + phi(thetas[1]+theta_tilde/2))/2,                     (phi(thetas[2]-theta_tilde/2) + phi(thetas[2]+theta_tilde/2))/2])
-radii = np.array([abs(phi(thetas[0]-theta_tilde/2) - phi(thetas[0]+theta_tilde/2))/2,                   abs(phi(thetas[1]-theta_tilde/2) - phi(thetas[1]+theta_tilde/2))/2,                   abs(phi(thetas[2]-theta_tilde/2) - phi(thetas[2]+theta_tilde/2))/2])
+centers = np.array([(phi(thetas[0]-theta_tilde/2) + phi(thetas[0]+theta_tilde/2))/2, (phi(thetas[1]-theta_tilde/2) + phi(thetas[1]+theta_tilde/2))/2, (phi(thetas[2]-theta_tilde/2) + phi(thetas[2]+theta_tilde/2))/2])
+radii = np.array([abs(phi(thetas[0]-theta_tilde/2) - phi(thetas[0]+theta_tilde/2))/2, abs(phi(thetas[1]-theta_tilde/2) - phi(thetas[1]+theta_tilde/2))/2, abs(phi(thetas[2]-theta_tilde/2) - phi(thetas[2]+theta_tilde/2))/2])
 
 
 # store function parameters (will not change in refinements)
@@ -87,8 +88,8 @@ for i in range(N):
         
         if i != j: 
             ind = funcs_i[i] # get index of desired function
-            b = (mob(funcs[ind,0], funcs[ind,1], centers[j]-radii[j]) +                     mob(funcs[ind,0], funcs[ind,1], centers[j]+radii[j]))/2
-            s = abs(mob(funcs[ind,0], funcs[ind,1], centers[j]-radii[j]) -                     mob(funcs[ind,0], funcs[ind,1], centers[j]+radii[j]))/2
+            b = (mob(funcs[ind,0], funcs[ind,1], centers[j]-radii[j]) + mob(funcs[ind,0], funcs[ind,1], centers[j]+radii[j]))/2
+            s = abs(mob(funcs[ind,0], funcs[ind,1], centers[j]-radii[j]) - mob(funcs[ind,0], funcs[ind,1], centers[j]+radii[j]))/2
 
             if (a+r > b-s) and (a-r < b+s): # if i -> j
                 y[i,j] = mob(funcs[ind,0], funcs[ind,1], x[j])
