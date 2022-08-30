@@ -1,0 +1,67 @@
+import numpy as np
+import random
+
+refinements = 0
+
+
+# the Cygan distance, using the definition of zero norm and the group operation in the Heisenberg group
+def cyg_dist(zeta_1, v_1, zeta_2, v_2):
+    val = np.sqrt(np.abs( np.abs(zeta_1-zeta_2)**2 + 1j*(v_1 - v_2 - 2*np.imag(np.conj(zeta_1)*zeta_2)) ))
+    
+    return val
+
+
+# the Koranyi inversion as given in equation (6) of RUP
+def kor_inv(zeta, v):
+    val = np.zeros((1,2)).astype(complex)
+    val[0] = zeta/(np.abs(zeta)**2 - 1j*v)
+    val[1] = -v/(np.abs(zeta)**4 + v**2)
+    
+    return val
+
+
+# the complex dilation as given on page 3 of RUP
+def comp_dil(zeta, v, lmbd):
+    val = np.zeros((1,2)).astype(complex)
+    val[0] = lmbd*zeta
+    val[1] = np.abs(lmbd)**2*v
+    
+    return val
+
+
+# the Heisenberg translation as given on page 3 of RUP
+def h_trans(zeta, v, xi, t):
+    val = np.zeros((1,2)).astype(complex)
+    val[0] = zeta + xi
+    val[1] = v + t + 2*np.imag(np.conj(zeta)*xi)
+    
+    return val
+
+
+# the complex inversion, as given at the top of page 7 of RUP
+def comp_inv(zeta, v, lmbd, xi, t):
+    tdid_val = h_trans(zeta, v, -xi, -t)
+    tdi_val = comp_dil(tdid_val[0], tdid_val[1], lmbd**(-1))
+    td_val = kor_inv(tdi_val[0], tdi_val[1])
+    t_val = comp_dil(td_val[0], td_val[1], lmbd)
+    val = h_trans(t_val[0], td_val[1], xi, t)
+    
+    return val
+
+
+# the absolute value of the determinant of (the Jacobian of) the complex inversion, as given in Lemma 2.1 of RUP
+# this serves the same purpose for this algorithm as f' did in the real case
+def abs_det_comp_inv(zeta, v, lmbd, xi, t):
+    val = np.abs(lmbd)**4/cyg_dist(zeta, v, xi, t)**4
+    
+    return val
+    
+# (1) for every i->j, solve for y_ij in P_i such that f_i(y_ij)=x_j
+
+# (2) Compute transition matrix, such that T_ij = { |f_i'(y_ij)|^-1 if i -> j, 0 otherwise
+
+# (3) Solve lambda(T^alpha)=1 (elementwise exponentiation) for this partition
+
+# (4) Output alpha
+
+# (5) Replace P with refinement R(P), define new sample points x_ij = y_ij, return to (1)
