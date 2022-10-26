@@ -115,15 +115,24 @@ def abs_det_comp_inv(zeta, v, lmbd, xi, t):
 # the resulting chain has center (beta,gamma) and complex radius alpha
 def chain_finder(lmbd, xi, t, rho, mu, x):
     val = np.empty(3).astype(complex)
-    alpha = np.abs(lmbd)**2 * np.conj(rho) * (mu-xi)**2 / np.abs(mu-xi)**2 / (np.abs(rho)**2 - np.abs(mu-xi)**2 + 1j*(x - t - 2*np.imag(np.conj(mu)*xi)))
-    beta = xi - np.abs(lmbd)**2*(mu-xi) / (np.abs(rho)**2 - np.abs(mu-xi)**2 + 1j*(x - t - 2*np.imag(np.conj(mu)*xi)))
-    gamma = t + 2*np.imag(np.abs(lmbd)**2 * np.conj(xi) * (mu-xi) / (np.abs(rho)**2 - np.abs(mu-xi)**2 + 1j*(-2*np.imag(np.conj(mu)*xi) + x - t))) - np.abs(lmbd)**4*(x - t - 2*np.imag(np.conj(mu)*xi)) / np.abs(np.abs(rho)**2 - np.abs(mu-xi)**2 + 1j*(x - t - 2*np.imag(np.conj(mu)*xi)))**2
     
+    if abs(mu-xi) < np.finfo(complex).eps: # check mu=xi up to machine precision
+        alpha = np.abs(lmbd)**2 * rho / (np.abs(rho)**2 - 1j*(x - t))
+        beta = xi
+        gamma = t - np.abs(lmbd)**4 * (x - t) / np.abs(np.abs(rho)**2 - 1j*(x - t))**2
+    else: # non-degenerate case, proceed as normal
+        alpha = np.abs(lmbd)**2 * np.conj(rho) * (mu-xi)**2 / np.abs(mu-xi)**2 \
+                              / (np.abs(rho)**2 - np.abs(mu-xi)**2 + 1j*(x - t - 2*np.imag(np.conj(mu)*xi)))
+        beta = xi - np.abs(lmbd)**2*(mu-xi) / (np.abs(rho)**2 - np.abs(mu-xi)**2 + 1j*(x - t - 2*np.imag(np.conj(mu)*xi)))
+        gamma = t + 2*np.imag(np.abs(lmbd)**2 * np.conj(xi) * (mu-xi) \
+                              / (np.abs(rho)**2 - np.abs(mu-xi)**2 + 1j*(-2*np.imag(np.conj(mu)*xi) + x - t))) \
+                              - np.abs(lmbd)**4*(x - t - 2*np.imag(np.conj(mu)*xi)) \
+                              / np.abs(np.abs(rho)**2 - np.abs(mu-xi)**2 + 1j*(x - t - 2*np.imag(np.conj(mu)*xi)))**2
+
     val[0] = alpha
     val[1] = beta
     val[2] = gamma
     return val
-
 
 
 

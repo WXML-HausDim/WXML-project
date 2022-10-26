@@ -3,6 +3,8 @@
 
 # In[248]:
 
+# Compute Hausdorff dimension numerically, for the real symmetric 2D Schottky
+
 
 import numpy as np
 import random
