@@ -57,14 +57,15 @@ for i in range(N):
 # Preliminary function definitions:
 
 
-# the Cygan distance, using the definition of zero norm and the group operation in the Heisenberg group
+# the Cygan distance between points (zeta_1,v_1) and (zeta_2,v_2), 
+# using the definition of zero norm and the group operation in the Heisenberg group
 def cyg_dist(zeta_1, v_1, zeta_2, v_2):
     val = np.sqrt(np.abs( np.abs(zeta_1-zeta_2)**2 + 1j*(v_1 - v_2 - 2*np.imag(np.conj(zeta_1)*zeta_2)) ))
     
     return val
 
 
-# the Koranyi inversion as given in equation (6) of RUP
+# the Koranyi inversion of a point (zeta,v)
 def kor_inv(zeta, v):
     val = np.empty(2).astype(complex)
     val[0] = zeta / (np.abs(zeta)**2 - 1j*v)
@@ -73,7 +74,7 @@ def kor_inv(zeta, v):
     return val
 
 
-# the complex dilation as given on page 3 of RUP
+# the complex dilation by lmbd applied to the point (zeta,v)
 def comp_dil(zeta, v, lmbd):
     val = np.empty(2).astype(complex)
     val[0] = lmbd * zeta
@@ -82,7 +83,7 @@ def comp_dil(zeta, v, lmbd):
     return val
 
 
-# the Heisenberg translation as given on page 3 of RUP
+# the Heisenberg translation by (xi,t) applied to the point (zeta,v)
 def h_trans(zeta, v, xi, t):
     val = np.empty(2).astype(complex)
     val[0] = zeta + xi
@@ -91,7 +92,7 @@ def h_trans(zeta, v, xi, t):
     return val
 
 
-# the complex inversion, as given at the top of page 7 of RUP
+# the complex inversion through the Cygan sphere of center (xi,t) and radius lmbd, applied to the point (zeta,v)
 def comp_inv(zeta, v, lmbd, xi, t):
     tdid_val = h_trans(zeta, v, -xi, -t)
     tdi_val = comp_dil(tdid_val[0], tdid_val[1], lmbd**(-1))
@@ -102,7 +103,7 @@ def comp_inv(zeta, v, lmbd, xi, t):
     return val
 
 
-# the (square rooted) magnitude of the Jacobian determinant of a complex inversion, as given in Lemma 2.1 of RUP
+# the (square rooted) magnitude of the Jacobian determinant of a complex inversion
 # serves the same purpose for this algorithm as f' did in the real case
 def abs_det_comp_inv(zeta, v, lmbd, xi, t):
     val = np.abs(lmbd)**4 / cyg_dist(zeta, v, xi, t)**4
