@@ -268,8 +268,64 @@ while refinements < num_refinements:
 
 
 
-
 # Results:
 
-
 print('computed dimension, after', refinements, 'refinements:', alpha_P)
+
+
+
+
+# plotting the spheres
+# this implementation plots 2M^2 "evenly" spaced points on each sphere
+ax = plt.axes(projection = '3d')
+
+# specify bounds, adjust as needed
+L = 2
+ax.set(xlim=(-L,L), ylim=(-L,L), zlim=(-L,L))
+
+# add axis labels
+plt.rcParams['text.usetex'] = True
+ax.set_xlabel('$\mathrm{Re}(\zeta)$')
+ax.set_ylabel('$\mathrm{Im}(\zeta)$')
+ax.set_zlabel('$v$')
+ax.set_title('')
+
+# 2M^2 points on each sphere
+M = 50
+
+# colors to use
+cs = ('red', 'yellow', 'blue')
+num_cs = 3
+
+for i in range(num_refinements+1):
+    cens = cumul_centers[i]
+    rads = cumul_radii[i]
+    for j in range(cens.shape[0]):
+        cen = cens[j,:]
+        rad = rads[j]
+
+        # linearly space points on Cygan spheres
+        phi = np.linspace(0, 2*np.pi, M)
+        rho = np.linspace(0, rad, M)
+        
+        # zeta coordinate
+        zetas = cen[0]*np.ones((M,M)) - np.outer(rho, np.exp(1j*phi))
+
+        # v coordinate
+        vs = cen[1]*np.ones((M,M)) + 2*np.imag(np.conj(cen[0])*np.outer(rho, np.exp(1j*phi))) \
+             - np.sqrt(rad**4*np.ones((M,M))-np.transpose(np.tile(rho**4, (M,1))))
+
+        # flatten arrays of points and account for upper and lower half of spheres
+        zetas = zetas.flatten()
+        zetas = np.tile(zetas, (1,2))
+        neg_vs = vs + 2*np.sqrt(rad**4*np.ones((M,M))-np.transpose(np.tile(rho**4, (M,1))))
+        vs = np.concatenate((vs, neg_vs))
+        vs = vs.flatten()
+
+        # plot the points
+        ax.scatter3D(np.real(zetas), np.imag(zetas), np.real(vs), marker = '.', c = cs[np.mod(i,num_cs)], alpha = 0.02)
+    
+    # for 2 refinements, helps visually, but there is probably a better solution
+    M = M//2
+        
+
