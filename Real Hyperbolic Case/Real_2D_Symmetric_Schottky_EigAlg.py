@@ -1,110 +1,116 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[248]:
-
-# Compute Hausdorff dimension numerically, for the real symmetric 2D Schottky
+# In[4]:
 
 
 import numpy as np
 import random
 
+# symmetric theta-Schottky, implemented in the disk model
+# here phi represents theta_tilde used in previous convention
+
 # define disjoint disks (Schottky group) and associated functions
 
 refinements = 0 # track number of refinements
-
 N = 3 # number of disks
-thetas = [np.pi/2, 7*np.pi/6, 11*np.pi/6] # angles of disk "centers"
-theta_tilde = np.pi/6 # angle of arc contained in each disk
 
-# define disks in terms of centers and radii
+# if converting from disk model to half-plane model
 
-# maps point e^it in disc model to corresponding point in upper half plane model
-# this is equivalent to the map phi(e^it) = -i*(e^it+1)/(e^it-1)
-def phi(t):
-    val = np.sin(t)/(np.cos(t)-1)
-    
-    return val
+thetas = [np.pi/3, np.pi, 5*np.pi/3] # angles of disk "centers" # angle of each center (central angle)
+phi = 2*np.pi/3.1
+phis = [phi, phi, phi] # angle of arc contained in each disk (arc angle)
 
-# obtain centers and radii by average and difference of endpoints of the half-circle under phi
-centers = np.array([(phi(thetas[0]-theta_tilde/2) + phi(thetas[0]+theta_tilde/2))/2, (phi(thetas[1]-theta_tilde/2) + phi(thetas[1]+theta_tilde/2))/2, (phi(thetas[2]-theta_tilde/2) + phi(thetas[2]+theta_tilde/2))/2])
-radii = np.array([abs(phi(thetas[0]-theta_tilde/2) - phi(thetas[0]+theta_tilde/2))/2, abs(phi(thetas[1]-theta_tilde/2) - phi(thetas[1]+theta_tilde/2))/2, abs(phi(thetas[2]-theta_tilde/2) - phi(thetas[2]+theta_tilde/2))/2])
 
+# for drawing
+data = np.array([thetas, phis])
+
+# track centers and radii from all iterations
+cumul_thetas = [thetas]
+cumul_phis = [phis]
 
 # store function parameters (will not change in refinements)
-funcs = np.array([[centers[0], radii[0]], [centers[1], radii[1]], [centers[2], radii[2]]])
+funcs = np.array([[thetas[0], phis[0]], [thetas[1], phis[1]], [thetas[2], phis[2]]])
 
 # create list of function indices corresponding to sample points x_i (i.e. which original disk contains x_i?)
 funcs_i = np.array([0, 1, 2])
 
 # generate sample points in each disk
+# not implemented randomly: takes midpoint of endpoints as sample point
 x = np.empty(N).astype(complex)
 for i in range(N):
-    theta = random.uniform(0, np.pi) # we want upper half of each disk
-    radius = random.uniform(0, radii[i])
-    x[i] = centers[i]+radius*(np.cos(theta)+1j*np.sin(theta))
+    x[i] = (np.exp(1j*(thetas[i]+phis[i]/2)) + np.exp(1j*(thetas[i]-phis[i]/2)))/2
+
+print(data)
 
 
-# In[249]:
+# In[5]:
 
 
-# define Mobius transformation, in terms of centers and radii
-# a and r are center and radius of the disk about which the reflection is taken
-# this map is its own inverse
+# define Mobius transformation, in terms of disk parameters
+# theta and phi are the central angle and arc angle of the disk through which the reflection is taken
+# this map is its own inverse, i.e. an  involution
 
-def mob(a, r, z):
-    val = a - r**2/(z-a)
+def mob(theta, phi, z):
+    u = 1j/np.sin(phi/2)
+    v = np.sin(theta)/np.tan(phi/2) + 1j*np.cos(theta)/np.tan(phi/2)
+    val = (u*z + np.conj(v)) / (v*z + np.conj(u))
         
     return val
-    
-    
-
-
-# In[250]:
-
 
 # define derivative of Mobius transformation analagously
 
-def mob_prime(a, r, z):
-    val = r**2/(z-a)**2
+def mob_prime(theta, phi, z):
+    u = 1j/np.sin(phi/2)
+    v = np.sin(theta)/np.tan(phi/2) + 1j*np.cos(theta)/np.tan(phi/2)
+    val = 1/(v*z + np.conj(u))**2
         
     return val
     
+# compute angle of a complex number z, in [0,2pi]
+def angle(z):
+    ang = np.angle(z)
+    val = ang + 2*np.pi*(ang < 0)
     
+    return val
 
 
-# In[259]:
+# In[36]:
 
 
 # (1) for every i->j, solve for y_ij in P_i such that f_i(y_ij)=x_j
 
 y = np.zeros((N,N)).astype(complex)
-new_centers = np.empty(0)
-new_radii = np.empty(0)
+new_thetas = np.empty(0)
+new_phis = np.empty(0)
 
 for i in range(N):
     for j in range(N):
         # P_i = D_r(a), f_i^-1(P_j) = D_s(b)
-        a = centers[i]
-        r = radii[i]
+        th = thetas[i]
+        ph = phis[i]
         
         if i != j: 
             ind = funcs_i[i] # get index of desired function
-            b = (mob(funcs[ind,0], funcs[ind,1], centers[j]-radii[j]) + mob(funcs[ind,0], funcs[ind,1], centers[j]+radii[j]))/2
-            s = abs(mob(funcs[ind,0], funcs[ind,1], centers[j]-radii[j]) - mob(funcs[ind,0], funcs[ind,1], centers[j]+radii[j]))/2
+            th_j = (angle(mob(funcs[ind,0], funcs[ind,1], np.exp(1j*(thetas[j]-phis[j]/2)))) +                     angle(mob(funcs[ind,0], funcs[ind,1], np.exp(1j*(thetas[j]+phis[j]/2)))))/2
+            ph_j = abs(angle(mob(funcs[ind,0], funcs[ind,1], np.exp(1j*(thetas[j]-phis[j]/2)))) -                     angle(mob(funcs[ind,0], funcs[ind,1], np.exp(1j*(thetas[j]+phis[j]/2)))))
+            
+            #print(th, th_j)
+            #print(ph, ph_j)
+            #print('\n')
 
-            if (a+r > b-s) and (a-r < b+s): # if i -> j
+            if (th+ph/2 > th_j-ph_j/2) and (th-ph/2 < th_j+ph_j/2): # if i -> j
                 y[i,j] = mob(funcs[ind,0], funcs[ind,1], x[j])
-                
+
                 # track sets for refinement
-                new_centers = np.append(new_centers, b)
-                new_radii = np.append(new_radii, s)
-            # else y_ij = 0
+                new_thetas = np.append(new_thetas, th_j)
+                new_phis = np.append(new_phis, ph_j)
+                # else y_ij = 0
 
-print(new_centers)
+#print(new_thetas)
 
 
-# In[260]:
+# In[37]:
 
 
 # (2) Compute transition matrix, such that T_ij = { |f_i'(y_ij)|^-1 if i -> j, 0 otherwise
@@ -117,10 +123,10 @@ for i in range(N):
             ind = funcs_i[i]
             T[i,j] = 1/abs(mob_prime(funcs[ind,0], funcs[ind,1], y[i,j]))
     
-print(T)
+#print(T)
 
 
-# In[261]:
+# In[38]:
 
 
 # (3) Solve lambda(T^alpha)=1 (elementwise exponentiation) for this partition
@@ -131,12 +137,24 @@ print(T)
 tol = 0.0001
 
 # initial alpha values, such that lambda(T^alphal) < 1 < lambda(T^alpha2)
-alpha1 = 10
+alpha1 = 1
 alpha2 = 0.01
+
 lmbd_1 = max(np.abs(np.linalg.eigvals(T**alpha1)))
 lmbd_2 = max(np.abs(np.linalg.eigvals(T**alpha2)))
 
 print(lmbd_1, lmbd_2)
+
+while (lmbd_1-1)*(lmbd_2-1)>0:
+    alpha1 = alpha1*2
+    alpha2 = alpha2/2
+    
+    lmbd_1 = max(np.abs(np.linalg.eigvals(T**alpha1)))
+    lmbd_2 = max(np.abs(np.linalg.eigvals(T**alpha2)))
+    
+    print(lmbd_1, lmbd_2)
+
+
 
 alpha_mid = (alpha1+alpha2)/2
 iterations = 1
@@ -166,7 +184,7 @@ print(iterations)
 alpha_P = alpha_mid
 
 
-# In[265]:
+# In[39]:
 
 
 # (5) Replace P with refinement R(P), define new sample points x_ij = y_ij, return to (1)
@@ -186,16 +204,19 @@ funcs_i = new_funcs_i.astype(int)
 N = x.size
 
 # refine sets in partition
-centers = new_centers
-radii = new_radii
+thetas = new_thetas
+phis = new_phis
+cumul_thetas.append(thetas)
+cumul_phis.append(phis)
+data = np.append(data, [thetas, phis], axis=1)
 
 # track refinements
 refinements = refinements + 1
 
-print(x)
+#print(data)
 
 
-# In[268]:
+# In[40]:
 
 
 # Print results
@@ -203,9 +224,21 @@ print(x)
 print('Our approximation to the dimension is ', alpha_P, '.')
 print('This estimate was obtained in', refinements, 'refinements.')
 
-asymp_est = np.log(2)/(np.log(12)-2*np.log(theta_tilde))
+asymp_est = np.log(2)/(np.log(12)-2*np.log(phi))
 
 print('The approximation given by the asymptotic formula is ', asymp_est)
+
+
+# In[41]:
+
+
+#np.savetxt('symmdisk7.csv', data, delimiter=',')
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
